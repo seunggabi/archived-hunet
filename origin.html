@@ -1,0 +1,1551 @@
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8"/>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+    <title>
+
+    </title>
+    <link href="./common/css/style.css" rel="stylesheet"/>
+    <script src="/common/js/jquery-1.11.1.min.js"></script>
+    <script src="./common/js/common.js"></script>
+    <script type="text/javascript" src="/Study/common/player/jwplayer.js"></script>
+
+    <style>
+        .layer .overlay {
+            background: rgba(0, 0, 0, 0.6);
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 998;
+        }
+
+        .layer .layer-dialog {
+            background: #fff;
+            color: #000;
+            padding: 30px;
+            text-align: center;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            margin-top: -150px;
+            margin-left: -160px;
+            z-index: 999;
+            width: 360px;
+            box-sizing: border-box;
+            border-radius: 20px;
+        }
+
+        .layer .layer-header {
+            padding-bottom: 10px;
+            border-bottom: 2px solid #000;
+            font-size: 22px;
+        }
+
+        .layer .layer-header h3 {
+            margin: 0;
+        }
+
+        .layer .layer-body p {
+            font-size: 16px;
+        }
+
+        .layer .layer-btn a {
+            display: inline-block;
+            width: 120px;
+            height: 30px;
+            line-height: 30px;
+            background: #777;
+            color: #fff;
+            text-decoration: none;
+        }
+
+        .layer .layer-dialog2 {
+            background: #fff;
+            color: #000; /*padding: 30px;*/
+            text-align: center;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            margin-top: -107px;
+            margin-left: -115px;
+            z-index: 999;
+            width: 230px;
+            height: 119px;
+            box-sizing: border-box;
+            border-radius: 20px;
+        }
+
+        .btn-primary2 {
+            color: #fff;
+            background-color: #B9D9FF;
+            border-color: #B9D9FF;
+        }
+
+        .btn-primary2:hover {
+            color: #fff;
+            background-color: #B9D9FF;
+            border-color: #B9D9FF;
+        }
+    </style>
+
+
+    <script type="text/javascript">
+
+        function setCookie(cookie_name, value, days) {
+            var exdate = new Date();
+            exdate.setDate(exdate.getDate() + days);
+
+            var cookie_value = escape(value) + ((days == null) ? '' : ';    expires=' + exdate.toUTCString());
+            document.cookie = cookie_name + '=' + cookie_value;
+        }
+
+        function getCookie(cookie_name) {
+            var x, y;
+            var val = document.cookie.split(';');
+
+            for (var i = 0; i < val.length; i++) {
+                x = val[i].substr(0, val[i].indexOf('='));
+                y = val[i].substr(val[i].indexOf('=') + 1);
+                x = x.replace(/^\s+|\s+$/g, '');
+                if (x == cookie_name) {
+                    return unescape(y);
+                }
+            }
+        }
+
+        $ = jQuery.noConflict();
+        $.ajaxSetup({cache: false});
+
+        top.window.resizeTo(1000, 720 * 0.96); 	// 윈도우 리사이즈를 잡아주기 위해 추가된 소스
+
+        if ('False' == 'True') {
+            top.window.resizeTo(1000, 720);
+        }
+
+        $(document).keydown(function (e) {
+            if (event.keyCode == 27) {
+                alert("ESC키를 입력하실 수 없습니다.");
+                return false;
+            } else if (event.keyCode == 122) {
+                if (jwplayer('video').getFullscreen() == false) {
+                    jwplayer('video').setFullscreen(true);
+                } else {
+                    jwplayer('video').setFullscreen(false);
+                }
+                return false;
+            }
+        });
+        var preMarkSeconds = '0';
+        var courseCd = 'HLSC60338';
+        var chapterNo = '0102';
+        var frameNo = '1';
+        var progressNo = '2';
+
+        var seamlessYn = 'Y';
+        var progessPassYn = 'N';
+
+        var lastMarkNo = '1';
+        var markSecondValue = '1';
+        var movCurrentFrame = '0';
+
+
+        var MoveCurrentFrame = '1';
+        var lastViewSec = '1';
+
+        var gMovPos = 0;
+        var arrayMark = "0:60:120:180:240:300:360:420:480:540:600:660:720:780:840:900:984";
+        var markList = arrayMark.split(':');
+        var markList2 = new Array(markList.length)
+        for (var i = 0; i < markList2.length; i++) {
+            markList2[i] = "N";
+        }
+
+        try {
+            if (lastMarkNo != '' && parseInt(lastMarkNo) > 1) {
+                for (var i = lastMarkNo; i > 0; i--) {
+                    markList2[i - 1] = "Y";
+                }
+            }
+        } catch (e) {
+
+        }
+
+        var isHtml5;
+        var isPause = false;
+
+        if (isCanvasSupported()) {
+            isHtml5 = "Y";
+        } else {
+            isHtml5 = "N";
+        }
+
+        function isCanvasSupported() {
+            var elem = document.createElement('canvas');
+            return !!(elem.getContext && elem.getContext('2d'));
+        }
+
+        $(function () {
+            //$('#speedTxt').hide();
+            //$('#speedUp').hide();
+            //$('#speedDown').hide();
+            if (!Array.prototype.filter) {
+                Array.prototype.filter = function (fun/*, thisArg*/) {
+                    'use strict';
+
+                    if (this === void 0 || this === null) {
+                        throw new TypeError();
+                    }
+
+                    var t = Object(this);
+                    var len = t.length >>> 0;
+                    if (typeof fun !== 'function') {
+                        throw new TypeError();
+                    }
+
+                    var res = [];
+                    var thisArg = arguments.length >= 2 ? arguments[1] : void 0;
+                    for (var i = 0; i < len; i++) {
+                        if (i in t) {
+                            var val = t[i];
+
+                            // NOTE: Technically this should Object.defineProperty at
+                            //       the next index, as push can be affected by
+                            //       properties on Object.prototype and Array.prototype.
+                            //       But that method's new, and collisions should be
+                            //       rare, so use the more-compatible alternative.
+                            if (fun.call(thisArg, val, i, t)) {
+                                res.push(val);
+                            }
+                        }
+                    }
+
+                    return res;
+                };
+            }
+        });
+        var agt = navigator.userAgent.toLowerCase();
+        var isIE910;
+
+        if (agt.indexOf("msie") > -1) {
+            if (agt.indexOf("trident/5") > -1) {
+                isIE910 = true;
+            } else if (agt.indexOf("trident/6") > -1) {
+                isIE910 = true;
+            } else {
+                isIE910 = false;
+            }
+        } else {
+            isIE910 = false;
+        }
+
+        var isPause = false;
+        var isStop = false;
+        var heartbeat;
+
+        var approvalYn = 'N';
+        var now = '2022-11-07';
+
+        if ('HLSC60338' == "HLSC33277" && '0102' == "0102") {
+            var heartbeatHlsc33277 = setInterval(fn_findSecHlsc33277, 1000); // 1000 = 1초
+        }
+
+        var MAX_POSITION = 0;
+
+        function fn_getMaxPosition(position) {
+            if (position == undefined || position == null || isNaN(position) == true) {
+                position = 0;
+            }
+
+            return MAX_POSITION > position ? MAX_POSITION : position;
+        }
+
+        function fn_setMaxPosition(position) {
+            if (position == undefined || position == null || isNaN(position) == true) {
+                position = 0;
+            }
+
+            MAX_POSITION = MAX_POSITION > position ? MAX_POSITION : position;
+        }
+
+
+        //studySec 구하기
+        function fn_saveProgress() {
+            // 멈춰있거나 종료되지 않은경우만 시간 저장
+            if (!isPause && !isStop && jwplayer('video').getState() == 'PLAYING') {
+                //var filtered = markList.filter(fn_getFilter);
+
+
+                var currentPosition = Math.round(jwplayer('video').getPosition());
+                if ('N' == 'Y') {
+                    //아산병원의 특정 과정의 경우 진도바 이동+마크진도율을 사용하고 가장 멀리 이동한 진도바의 마크를 진도율로 사용
+                    currentPosition = fn_getMaxPosition(currentPosition);
+                }
+
+                for (var i = 0; i < markList.length; i++) {
+
+                    if (markList2[i] == "N" && currentPosition == markList[i]) {
+                        // ############ 2018.11.20 박제영 : 세션확인 https://ihunet.atlassian.net/browse/INFR-582?filter=16502 ############
+                        fn_GetSessionYn();
+
+                        var param = "chapterNo=0102&current_frame_count=1&currentPosition=" + currentPosition + '&courseCd=HLSC60338&takeCourseSeq=44451499&duplicate_study_top_guid=& _' + $.now();
+
+                        $.get('ProgressSave.aspx', param, function (data) {
+                            if (data == "N") {
+                                alert('다른 위치에서 로그인 되었습니다. 학습이 종료되며 로그아웃됩니다.');
+                                top.close();
+                            } else if (data == "D") {
+                                top.location.href = 'http://study.hunet.co.kr/Imagine/B2BPlayer/ExitModalMessage.aspx';
+                                windown.focus();
+
+                                return;
+                            }
+                        });
+                        markList2[i] = "Y";
+
+                        // ########## 2017.05.22 노충환 : 진도저장시 창열린시간 초기화/ 동영상 시간진도 저장 ##########
+                        if ('45783' == '2584') {
+                            fn_SetNowStudyPlayTime();
+                        }
+                        // ############################################################################################
+
+                        fn_SetNowStudyStartFrame(1, currentPosition);
+                    } else if (markList2[i] == "N" && currentPosition >= markList[i] && markList[i] >= Number('0')) {
+                        // ############ 2018.11.20 박제영 : 세션확인 https://ihunet.atlassian.net/browse/INFR-582?filter=16502 ############
+                        fn_GetSessionYn();
+
+                        var param = "chapterNo=0102&current_frame_count=1&currentPosition=" + markList[i] + '&courseCd=HLSC60338&takeCourseSeq=44451499&duplicate_study_top_guid=&_' + $.now();
+                        $.get('ProgressSave.aspx', param, function (data) {
+                            if (data == "N") {
+                                alert('다른 위치에서 로그인 되었습니다. 학습이 종료되며 로그아웃됩니다.');
+                                top.close();
+                            } else if (data == "D") {
+                                top.location.href = 'http://study.hunet.co.kr/Imagine/B2BPlayer/ExitModalMessage.aspx';
+                                windown.focus();
+
+                                return;
+                            }
+                        });
+                        markList2[i] = "Y";
+
+                        // ########## 2017.05.22 노충환 : 진도저장시 창열린시간 초기화/ 동영상 시간진도 저장 ##########
+                        if ('45783' == '2584') {
+                            fn_SetNowStudyPlayTime();
+                        }
+                        // ############################################################################################
+
+                        fn_SetNowStudyStartFrame(2, currentPosition);
+                        break;
+                    }
+                }
+
+
+            }
+        }
+
+        // 2019-04-23 https://ihunet.atlassian.net/browse/BB-47515
+        var isHlsc33277 = true;
+        var isLoding;
+
+        function fn_findSecHlsc33277() {
+            var totalSec;
+            var currentPosition;
+
+            //alert("dd");
+            totalSec = Math.round(jwplayer('video').getDuration());
+            currentPosition = Math.round(jwplayer('video').getPosition());
+
+            if (totalSec == -1) {
+                isLoding = true;
+            } else {
+                isLoding = false;
+            }
+
+            if (!isLoding && isHlsc33277) {
+                if ((totalSec - currentPosition) <= 4) {
+                    isHlsc33277 = false;
+                    jwplayer('video').pause();
+                    isPause = true;
+                    studyTimeStop();
+                    realplay = 0;
+                    nowPlaybackRate = document.getElementById("video").querySelector("video").playbackRate;
+
+
+                    //alert(totalSec +","+ currentPosition+","+isHlsc33277+","+isLoding);
+
+                    $('#modalLastView').show();
+
+                }
+            }
+
+
+        }
+
+        // ############ 2017.05.19 노충환 : 창 열린시간 초기화 ############
+        function fn_SetNowStudyStartFrame(val, val2) {
+            //alert(val +"/" + val2); //########## 2017.05.19 노충환 : 케이스별로 들어오는 데이터 확인용
+            try {
+                $.ajax({
+                    type: "POST",
+                    url: "/Study/Mov/AjaxGetNowDate.aspx/GetDateTime",
+                    contentType: "application/json; charset=utf-8",
+                    async: false,
+                    //data: '',
+                    dataType: "json",
+                    success: function (data) {
+                        var retVal = data.d;
+                        if (retVal != null) {
+                            $("input[name=study_start_frame_day]", parent.frames['navi_frame'].document).val(retVal);
+                        }
+                    },
+                    //error: function (e) {
+                    error: function (request, status, error) {
+                        //alert("code:" + request.status + "\n" + "message:" + request.responseText + "\n" + "error:" + error);
+                    }
+                });
+            } catch (exception) {
+
+            }
+        }
+
+        // ############ 2018.11.20 박제영 : 세션확인 https://ihunet.atlassian.net/browse/INFR-582?filter=16502 ############
+        function fn_GetSessionYn() {
+            try {
+                $.ajax({
+                    type: "POST",
+                    url: "/StudyCookieExpire.aspx/GetSessionYn",
+                    contentType: "application/json; charset=utf-8",
+                    async: false,
+                    //data: '',
+                    dataType: "json",
+                    success: function (data) {
+                        if (data.d == 'N') {
+                            jwplayer('video').pause();
+                            alert('장시간 접속을 하시면서 고정된 페이지로 2시간 이상 머물러 있을 경우에는 보안상 학습 정보가 자동으로 끊어집니다.\n\n학습창을 반드시 닫고 다시 학습바랍니다.');
+                            top.close();
+                        }
+                    },
+                    error: function (request, status, error) {
+                    }
+                });
+            } catch (exception) {
+
+            }
+        }
+
+
+        // ############ 2017.05.22 노충환 : 동영상 재생시간 누적 ############
+        function fn_SetNowStudyPlayTime() {
+            try {
+                $.ajax({
+                    type: "POST",
+                    url: "/Study/Mov/AjaxSetMovStudySec.aspx/SetMovStudySec",
+                    contentType: "application/json; charset=utf-8",
+                    async: false,
+                    data: '{"take_course_seq":' + Number('44451499') + ',"course_cd":"' + 'HLSC60338' + '","chapter_no":"' + '0102' + '","frame_no":' + 1 + ',"mov_study_sec":' + Number(studySeconds) + '}',
+                    dataType: "json",
+                    success: function (data) {
+                        var retVal = data.d;
+                        studyTimeClear();
+                    },
+                    //error: function (e) {
+                    error: function (request, status, error) {
+                        //alert("code:" + request.status + "\n" + "message:" + request.responseText + "\n" + "error:" + error);
+                    }
+                });
+            } catch (exception) {
+
+            }
+        }
+
+        //스마트 패스 : 동영상 최대 어디까지 봤는지 저장
+        function fn_SaveProgressInfo(max_view_sec, last_view_sec) {
+            try {
+                $.ajax({
+                    type: "POST",
+                    url: "/Study/Mov/AjaxSetMovStudySec.aspx/SaveMaxViewSec",
+                    contentType: "application/json; charset=utf-8",
+                    async: true,
+                    data: '{"take_course_seq":' + Number('44451499') + ',"course_cd":"' + 'HLSC60338' + '","chapter_no":"' + '0102' + '","frame_no":' + 1 + ',"max_view_sec":' + Number(max_view_sec) + ',"last_view_sec":' + Number(last_view_sec) + '}',
+                    dataType: "json",
+                    success: function (data) {
+                        var retVal = data.d;
+                        studyTimeClear();
+                    },
+                    //error: function (e) {
+                    error: function (request, status, error) {
+                        //alert("code:" + request.status + "\n" + "message:" + request.responseText + "\n" + "error:" + error);
+                    }
+                });
+            } catch (exception) {
+
+            }
+        }
+
+        function fn_getFilter(val) {
+            currentPosition = Math.round(jwplayer('video').getPosition());
+            return currentPosition == val;
+        }
+
+        $(window).on('beforeunload', function () {
+            //closeStudy();
+
+
+            //jwplayer('video').onTime에서 누적
+            var max_view_sec = Math.round($("#hdfMaxPlayPosition").val());
+            var last_view_sec = Math.round($("#hdfLastPlayPosition").val());
+            fn_SaveProgressInfo(max_view_sec, last_view_sec);
+
+
+            // ############ 2017.05.22 노충환 : 동영상 재생시간 누적 ############
+            if ('45783' == '2584') {
+                fn_SetNowStudyPlayTime();
+            }
+
+            //국민건강보험공단(4257) 동영상전용과정 배속 부분 https://hug.hunet.co.kr/app/works/applet/33/doc/8899/navigate
+
+
+            if ('45783' == '4257') {
+                setCookie("custom_4257_playbackRate", nowPlaybackRate, 30);
+            }
+
+
+        });
+
+        function fn_moveBlockLayerClose() {
+            seeking = false;
+            jwplayer('video').play(true);
+            $('#moveBlockLayer').hide();
+        }
+
+
+        function onOpenPopIBKQnA() {
+            var url = "https://ibk.hunet.co.kr/Login/__sigUpLOGIN?userId=" + "TMAP-T1100412" + "&returnUrl=https%3A%2F%2Fibk.hunet.co.kr%2FBBS%2FBaseWrite%3FcommunitySeq%3D3362%26boardSeq%3D12790";
+            window.open(url, "Newtitle", "height=" + screen.height + ",width=" + screen.width + "fullscreen=yes");
+        }
+    </script>
+</head>
+<body>
+
+<form name="form1" method="post"
+      action="./JWplayer.aspx?chapterNo=0102&amp;indexNo=2&amp;current_frame_count=1&amp;mov_Path=&amp;progressNo=2&amp;onlyMovSeamlessYn=Y&amp;onlyMovYn=Y&amp;duplicate_study_top_guid="
+      id="form1">
+    <div>
+        <input type="hidden" name="__VIEWSTATE" id="__VIEWSTATE"
+               value="/wEPDwUKMTk3OTAyOTEyMmRkIXKWYR5fepxHKgKyggSLZ0R+2Dg="/>
+    </div>
+
+    <div>
+
+        <input type="hidden" name="__VIEWSTATEGENERATOR" id="__VIEWSTATEGENERATOR" value="A92A1F25"/>
+    </div>
+
+    <div id="sangsang-player">
+        <!-- sangsang-player-header -->
+        <div id="sangsang-player-header">
+            <table>
+                <tbody>
+                <tr>
+                    <td class="subject">
+                        <h1><i></i><span>직장 내 성희롱의 성립요건 및 특성 </span></h1>
+                    </td>
+                    <td class="brand">
+
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+        <!-- sangsang-player-header -->
+        <!-- sangsang-player-body -->
+        <div id="sangsang-player-body">
+            <!-- sangsang-player-nav -->
+            <div id="sangsang-player-nav" style="width:200px; margin-left:200px;visibility:hidden;">
+                <div class="body">
+
+
+                </div>
+            </div>
+            <!-- /sangsang-player-nav -->
+            <!-- modal-bookmark-add -->
+
+            <div id="video" style="height: 525px; background: #444;">
+            </div>
+
+            <!-- https://hug.hunet.co.kr/app/works/applet/33/doc/45511/navigate -->
+
+        </div>
+        <!-- /sangsang-player-body -->
+    </div>
+    <div id="moveBlockLayer" class="layer" style="display:none;">
+        <div class="layer-dialog">
+            <div class="layer-content">
+                <div class="layer-header">
+                    <h3>알림</h3>
+                </div>
+                <div class="layer-body">
+                    <p>학습을 완료하셔야 이동이 가능합니다.</p>
+                    <div class="layer-btn">
+                        <a href="#" onclick="fn_moveBlockLayerClose();">확인</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="overlay"></div>
+    </div>
+</form>
+<script>
+    var isContinue = false;
+
+    // ########### 2018.08.28 박제영 : https://ihunet.atlassian.net/browse/BB-30626?filter=16502 배속기능오류  ###########
+    //var nowRate = 1.0;
+
+    // ########### 2017.05.22 노충환 : 아산커스텀 - 돌발퀴즈 관련 스위치 변수 (onePlay_Check) ###########
+    var onePlay_Check = 0;
+
+    // ########### 2017.05.22 노충환 : 아산커스텀 - 영상재생 시간 관련 스위치 변수 (realplay) ###########
+    var realplay = 0;
+
+    // ########### 2017.05.22 노충환 : 아산커스텀 START ###########
+    var studySeconds = 0;
+    var t;
+
+    function add() {
+        studySeconds = studySeconds + 1;
+        studyTimer();
+    }
+
+    function studyTimer() {
+        t = setTimeout(add, 1000);
+    }
+
+    /* Start */
+    function studyTimestart() {
+        studyTimer();
+    }
+
+    /* Stop */
+    function studyTimeStop() {
+        clearTimeout(t);
+    }
+
+    /* Clear */
+    function studyTimeClear() {
+        studySeconds = 0;
+    }
+
+    //studyTimestart();
+    // ########### 2017.05.22 노충환 : 아산커스텀 END ###########
+
+    function fnPlayEnd() {
+        if ("0103" == "N" && "HLSC60338" != "HLSC41368" && "HLSC60338" != "HLSC54701") {
+            //alert("마지막 차시입니다.");
+        } else if ("0103" == "N" && "HLSC60338" == "HLSC41368") {
+            alert("모든 학습을 완료하셨습니다. 평가 응시 바랍니다");
+        } else if ("0103" == "N" && "HLSC60338" == "HLSC54701" && '45783' == '2586') {
+            alert("과정이 종료되었습니다. 과정평가로 이동하시기 바랍니다. ");
+        } else if (('45783' == '4258' && 'False' == 'True' && ('2748' == '2600' || '2748' == '2700'))) {
+            fnStudyStart('0103', '3', 'M', '');
+        } else if ("0103" == "N" && '45783' == '1210' && 'False' == 'True') {
+            alert("학습이 완료되었습니다");
+        } else if ('45783' == '1210' && 'False' == 'True') {
+            alert("해당 차시가 종료되었으니 창을 닫고 다음 차시를 학습해 주세요.");
+        } else if (('45783' == '43725' && 'False' == 'True')) {
+            fnStudyStart('0103', '3', 'M', '');
+        } else {
+
+
+            $.ajax({
+                type: "POST",
+                url: "/Study/Mov/JWplayer.aspx/GetNextMove",
+                contentType: "application/json; charset=utf-8",
+                async: false,
+                data: '{"take_course_seq":' + Number(44451499) + ',"course_cd":"' + 'HLSC60338' + '","chapter_no":"' + '0102' + '","frame_no":' + Number(1) + '}',
+                dataType: "json",
+                success: function (data) {
+                    var rtnYn = data.d;
+                    if (rtnYn == "Y") {
+                        if (confirm('다음 차시를 학습하시겠습니까?')) {
+                            fnStudyStart('0103', '3', 'M', '', '');
+                        }
+                    }
+                },
+                error: function (e) {
+                    //alert("code:" + request.status + "\n" + "message:" + request.responseText + "\n" + "error:" + error);
+                    //alert("데이터 전송중 오류가 발생했습니다.");
+                }
+            });
+
+        }
+    }
+
+    function fnStudyStart(chapterno, goIndexNo, contentsType, movPath, duplicateStudyTopGuid) {
+        if ((chapterno == "")) {
+            alert("마지막 차시입니다.");
+        } else {
+            var vurl = "";
+            vurl += "/Mov/Player/Default.aspx?chapterNo=" + chapterno + "&indexNo=" + goIndexNo + "&current_frame_count=1&mov_Path=" + movPath + "&progressNo=" + goIndexNo + "&onlyMovSeamlessYn=Y&onlyMovYn=Y&duplicate_study_top_guid=" + duplicateStudyTopGuid;
+
+            top.location.href = vurl;
+        }
+    }
+
+    function GetPrefix() {
+        var baseURL = "/contents/wbt/common/VodOnly/";
+        var s = baseURL;
+        if (s == null) {
+            //s = GetCurrentPath();
+            baseURL = s;
+        }
+        return s;
+    }
+
+    $(document).ready(function () {
+        jwplayer('video').onPlay(function () {
+            alert('it has started')
+        });
+        $("#btnDown").click(function () {
+            if ('False' == 'True') {
+                window.open(GetPrefix() + 'down.zip');
+            }
+
+            if ('False' == 'True') {
+                window.open("/Contents/Wbt/HLSC60338/down.zip");
+            }
+        });
+
+
+        jwplayer.key = "QwcUStPjMUCudGtoFypd1NuGboFi+2lCntTfvNSb9jE=";
+
+        //2017-08-03 20:00 박제영 https://ihunet.atlassian.net/browse/BB-5024?filter=16609
+        //2018-01-09 10:00 박제영 https://ihunet.atlassian.net/browse/BB-15020?filter=16502
+        //2018-05-18 이현석 https://ihunet.atlassian.net/browse/BB-24373
+        if ('Y' == 'Y') {
+
+
+            if (isHtml5 == "Y") {
+                var vttFile = "/Files/Study/Skin/HLSC60338/0102_01_kr.vtt";
+                jwplayer('video').setup({
+                    file: 'https://vod.cdn.hunet.co.kr/eLearning/Hunet/HLSC59441/02.mp4'
+                    , width: "100%"
+                    , aspectratio: "16:9"
+                    , autostart: true
+                    , repeat: false
+                    , usefullscreen: false
+                    , allowfullscreen: false
+                    , abouttext: "HUNET HTML5 Player"
+                    , aboutlink: "/Study/Controls/PlayerVersion.aspx"
+                    , skin: "/Study/Common/Player/Skins/glow.xml"
+                    , startparam: "start"
+                    , tracks: [{
+                        file: vttFile
+                        , kind: "captions"
+                        , label: "english"
+                        , 'default': '45783' == '1966' ? false : true
+                    }]
+                });
+            } else {
+                jwplayer('video').setup({
+                    file: 'https://vod.cdn.hunet.co.kr/eLearning/Hunet/HLSC59441/02.mp4'
+                    , width: '924'
+                    , height: '570'
+                    , autostart: true
+                    , repeat: false
+                    , usefullscreen: false
+                    , allowfullscreen: false
+                    , abouttext: "HUNET HTML5 Player"
+                    , aboutlink: "/Study/Controls/PlayerVersion.aspx"
+                    , skin: "/Study/Common/Player/Skins/glow.xml"
+                    , startparam: "start"
+                    , tracks: [{
+                        file: vttFile
+                        , kind: "captions"
+                        , label: "english"
+                        , 'default': '45783' == '1966' ? false : true
+                    }]
+                });
+            }
+        } else if (('N' == 'Y')
+            && ('True' == 'True' && 'N' != 'Y')) {
+            if (isHtml5 == "Y") {
+                jwplayer('video').setup({
+                    file: 'https://vod.cdn.hunet.co.kr/eLearning/Hunet/HLSC59441/02.mp4'
+                    , width: "100%"
+                    , aspectratio: "16:9"
+                    , autostart: true
+                    , repeat: false
+                    , usefullscreen: false
+                    , allowfullscreen: false
+                    , abouttext: "HUNET HTML5 Player"
+                    , aboutlink: "/Study/Controls/PlayerVersion.aspx"
+                    , skin: "/Study/Common/Player/Skins/glow_no.xml"
+                    , startparam: "start"
+                });
+            } else {
+                jwplayer('video').setup({
+                    file: 'https://vod.cdn.hunet.co.kr/eLearning/Hunet/HLSC59441/02.mp4'
+                    , width: '924'
+                    , height: '570'
+                    , autostart: true
+                    , repeat: false
+                    , usefullscreen: false
+                    , allowfullscreen: false
+                    , abouttext: "HUNET HTML5 Player"
+                    , aboutlink: "/Study/Controls/PlayerVersion.aspx"
+                    , skin: "/Study/Common/Player/Skins/glow_no.xml"
+                    , startparam: "start"
+                });
+            }
+        } else {
+            var cusAutoStart = true;
+            if ('N' == 'Y' && 'N' == "Y") {
+                cusAutoStart = false;
+            }
+
+            if (isHtml5 == "Y") {
+
+                jwplayer('video').setup({
+                    file: 'https://vod.cdn.hunet.co.kr/eLearning/Hunet/HLSC59441/02.mp4'
+                    , width: "100%"
+                    , aspectratio: "16:9"
+                    , autostart: cusAutoStart
+                    , repeat: false
+                    , usefullscreen: false
+                    , allowfullscreen: false
+                    , abouttext: "HUNET HTML5 Player"
+                    , aboutlink: "/Study/Controls/PlayerVersion.aspx"
+                    , skin: "/Study/Common/Player/Skins/glow.xml"
+                    , startparam: "start"
+
+                });
+
+            } else {
+
+                jwplayer('video').setup({
+                    file: 'https://vod.cdn.hunet.co.kr/eLearning/Hunet/HLSC59441/02.mp4'
+                    , width: '924'
+                    , height: '570'
+                    , autostart: true
+                    , repeat: false
+                    , usefullscreen: false
+                    , allowfullscreen: false
+                    , abouttext: "HUNET HTML5 Player"
+                    , aboutlink: "/Study/Controls/PlayerVersion.aspx"
+                    , skin: "/Study/Common/Player/Skins/glow.xml"
+                    , startparam: "start"
+                });
+            }
+
+
+        }
+
+        //$('#speedUp').click(function(e){
+        //    e.preventDefault();
+        //    fn_SpeedUp();
+        //});
+        //$('#speedDown').click(function(e){
+        //    e.preventDefault();
+        //    fn_SpeedDown();
+        //});
+
+        var renderMode = "flash";
+
+        var prevCurrentTime = null;
+        const maxPlayBackRate = 2.0;
+
+        jwplayer('video').onReady(function () {
+            renderMode = jwplayer().getRenderingMode();
+
+
+            if (renderMode == "html5") {
+                //$('#speedTxt').show();
+                //$('#speedUp').show();
+                //$('#speedDown').show();
+                //국민건강보험공단(4257) 동영상전용과정 배속 부분 https://hug.hunet.co.kr/app/works/applet/33/doc/8899/navigate
+
+
+                if ('45783' == '4257') {
+                    var custom_4257_Rate = getCookie("custom_4257_playbackRate");
+                    if (custom_4257_Rate != null) {
+                        document.getElementById("video").querySelector("video").playbackRate = custom_4257_Rate;
+                        nowPlaybackRate = document.getElementById("video").querySelector("video").playbackRate;
+                    }
+                }
+                fn_AddSpeedButton();
+
+                fn_Default_SpeedSet();
+
+            }
+
+
+            if (lastViewSec != "" && lastViewSec != "0" && lastViewSec != "1" && renderMode == "html5") // && passYn != "Y" // ########## 2016.04.14 : http://hug.hunet.co.kr/Task/TaskScheduleView.aspx?workSeq=199186&requestType=MyTeam 추가 !=1
+            {
+                if (confirm('마지막 시청하셨던 위치부터 재생하시겠습니까?')) {
+                    jwplayer('video').seek(lastViewSec - 3);
+                }
+            }
+            if ('False' == 'True') {
+                fn_RemoveSpeedButton();
+            }
+
+            // 2020-05-08 김구 신한카드SM(42782), ShinhanCard SM EDU과정 배속 제외 요청 - https://hug.hunet.co.kr/app/works/applet/33/doc/51704 : S
+            if ("HLSP60967" == "HLSP41340" && "HLSC60338" == "HLSC40875" && "45783" == "42782") {
+                fn_RemoveSpeedButton();
+            }
+            // 2020-05-08 김구 신한카드SM(42782), ShinhanCard SM EDU과정 배속 제외 요청 : E
+            if ("45783" == "23839" && ("HLSP60967" == "HLSP41984" || "HLSP60967" == "HLSP41983")) {
+                fn_RemoveSpeedButton();
+            }
+            // 2020-06-10 [AIA생명] 배속기능 삭제 요청의 건 - https://hug.hunet.co.kr/app/works/applet/33/doc/56761/navigate
+            if (("45783" == "23840" || "45783" == "23839") && ("HLSP60967" == "HLSP41986" && "HLSC60338" == "HLSC41515")) {
+                fn_RemoveSpeedButton();
+            }
+            // 2020-06-25 배속기능 삭제 요청의 건 - https://hug.hunet.co.kr/app/works/applet/33/doc/58911/navigate
+            if (("45783" == "23839") && (("HLSP60967" == "HLSP42628" && "HLSC60338" == "HLSC42150") ||
+                ("HLSP60967" == "HLSP42670" && "HLSC60338" == "HLSC42192") ||
+                ("HLSP60967" == "HLSP42635" && "HLSC60338" == "HLSC42157") ||
+                ("HLSP60967" == "HLSP42627" && "HLSC60338" == "HLSC42149") ||
+                ("HLSP60967" == "HLSP42609" && "HLSC60338" == "HLSC42131"))) {
+                fn_RemoveSpeedButton();
+            }
+            // 2020-06-30 배속기능 삭제 요청의 건 - https://hug.hunet.co.kr/app/works/applet/33/doc/59585/navigate
+            if (("45783" == "4301") && (("HLSP60967" == "HLSP42486" && "HLSC60338" == "HLSC42008") ||
+                ("HLSP60967" == "HLSP42487" && "HLSC60338" == "HLSC42009") ||
+                ("HLSP60967" == "HLSP42488" && "HLSC60338" == "HLSC42010") ||
+                ("HLSP60967" == "HLSP42489" && "HLSC60338" == "HLSC42011") ||
+                ("HLSP60967" == "HLSP42484" && "HLSC60338" == "HLSC42006") ||
+                ("HLSP60967" == "HLSP42485" && "HLSC60338" == "HLSC42007"))) {
+                fn_RemoveSpeedButton();
+            }
+
+            // 2020-07-07 국민건강보험(4257) - 배속제외 요청 - https://hug.hunet.co.kr/app/works/applet/33/doc/60668/navigate
+            if (("45783" == "4257") && ("HLSP60967" == "HLSP42727" && "HLSC60338" == "HLSC42249")) {
+                fn_RemoveSpeedButton();
+            }
+            // 2020.07.07 대상(3759) - 배속제외 처리 요청   https://hug.hunet.co.kr/app/works/applet/33/doc/60764/navigate
+            if (("45783" == "3759") &&
+                (("HLSP60967" == "HLSP42687" && "HLSC60338" == "HLSC42209") ||
+                    ("HLSP60967" == "HLSP42699" && "HLSC60338" == "HLSC42221") ||
+                    ("HLSP60967" == "HLSP42700" && "HLSC60338" == "HLSC42222"))) {
+                fn_RemoveSpeedButton();
+            }
+
+
+            //크롬 확장프로그램 대응
+            document.querySelector("video").ontimeupdate = (event) => {
+                var video = document.querySelector("video");
+                if (prevCurrentTime != null && video.currentTime - prevCurrentTime > 1 && video.currentTime > maxPlayPosition) {
+                    video.currentTime = prevCurrentTime;
+                } else {
+                    prevCurrentTime = video.currentTime;
+                }
+
+                if (video.playbackRate > maxPlayBackRate) {
+                    video.playbackRate = maxPlayBackRate;
+                }
+            }
+
+
+        });
+
+
+        jwplayer('video').onPause(function (event) {
+            isPause = true;
+
+            // ########### 2017.05.22 노충환 : 아산커스텀 START ###########
+            studyTimeStop();
+            realplay = 0;
+            // ########### 2017.05.22 노충환 : 아산커스텀 END ###########
+
+            // ########### 2018.08.28 박제영 : https://ihunet.atlassian.net/browse/BB-30626?filter=16502 배속기능오류  ###########
+            //nowRate = document.getElementById("video").querySelector("video").playbackRate;
+            nowPlaybackRate = document.getElementById("video").querySelector("video").playbackRate;
+
+
+        });
+
+        jwplayer('video').onComplete(function (event) {
+            clearInterval(heartbeat);
+            if ('HLSC60338' == "HLSC23014" && '0102' <= "0105") {
+                alert("학습을 모두 마쳤습니다. 다음 차시로 이동하여 학습하세요.");
+            } else if ("HLSC60338" == "HLSC67230" && "0102" == "0106" && "Y" == "N") {
+                $('#moveBlockLayer53553').show();
+            } else if ("HLSC60338" == "HLSC67231" && "0102" == "0108" && "Y" == "N") {
+                $('#moveBlockLayer53553').show();
+            } else if ('HLSC60338' == "HLSC23014" && '0102' == "0106") {
+                alert("학습을 모두 마쳤습니다.");
+            } else if ('HLSC60338' == "HLSC29574" && '0102' <= "0105") {
+                alert("다음 차시를 이어서 학습해주세요.");
+            } else if ('HLSC60338' == "HLSC29574" && '0102' == "0106") {
+                alert("학습이 완료되었습니다.\n시험응시까지 완료되어야 최종 수료 가능하시니 참고해주세요.");
+            } else if ("0103" == "N" && "0102" == "0205" && "False" == "True" && 45783 != 23839) {
+                if ('False' == 'True') {
+                    alert("마지막 차시입니다.\r\n자료실 내 파일 확인과 시험 응시 진행해 주시길 바랍니다.");
+                } else {
+                    alert("마지막 차시입니다.\r\n수료 기준 확인하신 후\r\n반드시 평가 응시(제출)해주시기 바랍니다.");
+                }
+
+            } else if ("0103" == "N" && "0102" == "0205" && "True" == "True" && 45783 != 23839) {
+                if ('False' == 'True') {
+                    alert("Dream with 유, 함께 성장하는 DB Way’ 학습을 완료하셨습니다.\n학습홈으로 이동하셔서 ‘설문/수강후기‘에서 설문에 꼭 응답해 주세요!");
+                    top.close();
+                } else {
+                    alert("마지막 차시입니다.");
+                }
+            }
+        });
+
+        jwplayer('video').onPlay(function (event) {
+            isPause = false;
+
+            // ########### 2017.05.22 노충환 : 아산커스텀 START ###########
+            if (realplay == 0) {
+                studyTimestart();
+                realplay = 1;
+            }
+            // ########### 2017.05.22 노충환 : 아산커스텀 END ###########
+
+            // ########### 2018.08.28 박제영 : https://ihunet.atlassian.net/browse/BB-30626?filter=16502 배속기능오류  ###########
+            //document.getElementById("video").querySelector("video").playbackRate = nowRate.toFixed(1);
+            document.getElementById("video").querySelector("video").playbackRate = nowPlaybackRate.toFixed(1);
+            //$('#speedTxt').html('배속 x '+nowRate.toFixed(1));
+
+
+        });
+        var maxPlayPosition = 1;
+        var seeking = false;
+        jwplayer('video').onSeek(function (event) {
+            if (!seeking) {
+                if (event.offset > maxPlayPosition) {
+                    seeking = true;
+                    setTimeout(function () {
+                        jwplayer('video').seek(maxPlayPosition);
+                    }, 5);
+                    isPause = false;
+                }
+            } else {
+                $('#moveBlockLayer').show();
+                jwplayer('video').pause();
+                seeking = false;
+            }
+        });
+
+
+        var topWidth = 0;
+        var topHeight = 0;
+
+        topWidth = top.window.outerWidth;
+        topHeight = top.window.outerHeight;
+
+
+        //jwplayer('video').onFullscreen(function(fullscreen){
+        //    if (jwplayer('video').getFullscreen() == false) {
+        //        top.window.moveTo(0, 0);
+        //        top.window.resizeTo(topWidth, topHeight);
+        //    }
+        //    else {
+        //        top.window.moveTo(0, 0);
+        //        top.window.resizeTo(screen.availWidth, screen.availHeight);
+        //    }
+        //});
+
+
+        jwplayer('video').onTime(function (event) {
+            if (seeking == false && isPause == false) {
+                if (renderMode != "html5") {
+                    maxPlayPosition = event.position - 60 > maxPlayPosition ? (event.position - 60) <= 0 ? 0 : event.position - 60 : maxPlayPosition;
+                } else {
+                    maxPlayPosition = event.position > maxPlayPosition ? event.position : maxPlayPosition;
+                }
+
+                $("#hdfMaxPlayPosition").val(maxPlayPosition);
+                $("#hdfLastPlayPosition").val(event.position);
+            }
+
+            var maxPosition = jwplayer('video').getDuration();
+            var bufPosition = maxPosition * jwplayer('video').getBuffer() / 100;
+
+            if (parseInt(lastViewSec) + 60 < bufPosition) {
+                if (lastViewSec != "" && lastViewSec - 3 > 0 && !isContinue && renderMode != "html5") {
+                    isContinue = true;
+                    if (confirm('마지막 시청하셨던 위치부터 재생하시겠습니까?')) {
+                        if ('45783' != '9242')
+                            jwplayer('video').seek(lastViewSec - 3);
+                        else
+                            jwplayer('video').seek(lastViewSec + 3);
+
+                    }
+                }
+            }
+
+            // ########### 2017.05.22 노충환 : 아산커스텀 - 돌발퀴즈 관련 (QuizScript) ###########
+
+
+        });
+
+        //https://ihunet.atlassian.net/browse/BB-33963
+        //2019-12-04 김원종 동영상 과정 종료시 다음 차시 자동 이동(고봉석 책임님 요청사항)
+        if (('45783' == '8341' && 'False' == 'True') || ('HLSC60338' == 'HLSC36014') || ('HLSC60338' == 'HLSC41368') || (('HLSC60338' == 'HLSC33729') && ('45783' == '21495'))
+            || ('45783' == '43123' && 'False' == 'True')
+            || ('45783' == '29759' && 'False' == 'True')
+            || ('45783' == '2586' && 'False' == 'True')
+            || ('45783' == '4258' && 'False' == 'True' && ('2748' == '2600' || '2748' == '2700'))
+            || ('45783' == '10148')
+            || ('45783' == '47297')
+            || ('45783' == '1210' && 'False' == 'True')
+            || ('45783' == '10065' && 'False' == 'True')
+        ) {
+            jwplayer('video').onComplete(function (event) {
+                fnPlayEnd();
+            });
+        } else {
+            jwplayer('video').onComplete(function (event) {
+                try {
+                    //영상 끝나면 부모창 새로고침!
+                    if (parent.opener != undefined && parent.opener != null) {
+                        document.domain = 'hunet.co.kr';
+                        parent.opener.location = parent.opener.location;
+                    }
+                } catch (e) {
+
+                }
+
+                fnPlayEnd();
+
+            });
+        }
+
+        // fn_GoSeek(lastViewSec);
+        // 신한카드 3882 커스텀 2020.02.24 김구 : S
+        var alertCustom3882 = setInterval(fn_alertCustom3882, 2000); // 1000 = 1초
+
+        function fn_alertCustom3882() {
+            var totalSec;
+            var currentPosition;
+            totalSec = Math.round(jwplayer('video').getDuration());
+            currentPosition = Math.round(jwplayer('video').getPosition());
+
+            if ('45783' == '3882' && 'HLSC60338' == "HLSC39181" && 'HLSP60967' == "HLSP39638" && "2022" == "2020" && ('2748' == "3000" || '2748' == "3001") && 'N' != 'Y') {
+                if (currentPosition >= 300 && currentPosition <= 310) {
+                    clearInterval(alertCustom3882);
+                    jwplayer('video').pause();
+                    alert("영상을 계속 보시려면 확인을 눌러주세요.");
+                    jwplayer('video').play(true);
+                }
+            } else {
+                clearInterval(alertCustom3882);
+            }
+
+        }
+
+        // 신한카드 3882 커스텀 2020.02.24 김구 : E
+
+    });
+
+
+    //기본 배속 지정
+    function fn_Default_SpeedSet() {
+        //2020.07.10 박문한 https://hug.hunet.co.kr/app/works/applet/33/doc/61218/navigate
+        var defaultRate = 1.0;
+
+        if ('False' == 'True') {
+
+            defaultRate = 1.2;
+        } else if ('False' == 'True') {
+            defaultRate = 1.3;
+        } else if ('False' == 'True') {
+            if ('False' == 'True') {
+                defaultRate = 0.9;
+            } else if ('False' == 'True') {
+                defaultRate = 1.1;
+            } else if ('False' == 'True') {
+                defaultRate = 1.2;
+            } else if ('False' == 'True') {
+                defaultRate = 1.3;
+            } else if ('False' == 'True') {
+                defaultRate = 1.4;
+            } else if ('False' == 'True') {
+                defaultRate = 1.5;
+            }
+        } else if ('False' == 'True') {
+            defaultRate = 1.1;
+        }
+
+        document.getElementById("video").querySelector("video").playbackRate = defaultRate;
+        nowPlaybackRate = document.getElementById("video").querySelector("video").playbackRate;  //nowPlaybackRate 해당 변수가 OnPlay 시에 배속 변수로 적용된다.
+
+        //배속 호출 이후 아래 함수 호출 되어야 화면상 표현도 바뀜
+        fn_RemoveSpeedButton();
+        fn_AddSpeedButton();
+    }
+
+
+    function fn_GoSeek(mark) {
+        jwplayer('video').seek(mark);
+    }
+
+    function fn_SpeedUp() {
+        playBackRate = (document.getElementById("video").querySelector("video").playbackRate);
+        playBackRate = playBackRate.toFixed(1);
+
+        // 2017-04-07 최순규
+        // http://hug.hunet.co.kr/Task/TaskScheduleView.aspx?workSeq=236359&requestType=MyTask
+        var rate = 2;
+        if ('False' == 'True') {
+            rate = 1.2;
+        } else if ('False' == 'True' && 'False' == 'True') {
+            rate = 1.2;
+        }
+
+        if ('False' == 'True') {
+            rate = 1.3;
+        }
+        if ('False' == 'True') {
+            rate = 1.2;
+        }
+
+
+        if ('False' == 'True') {
+            rate = 1.5;
+        }
+
+        if ('False' == 'True') {
+            rate = 1.5;
+        } else if ('False' == 'True') {
+            rate = 1.5;
+        } else if ('False' == 'True') {
+            rate = 1.5;
+        } else if ('False' == 'True') {
+            rate = 1.3;
+        } else if ('False' == 'True') {
+            rate = 1.5;
+        }
+
+        if ('False' == 'True') {
+            rate = 1.2;
+        }
+
+        if ('False' == 'True') {
+            rate = 1.5;
+        }
+
+        if ('False' == 'True') {
+            rate = 1.8;
+        }
+
+        if ('False' == 'True') {
+            rate = 1.5;
+        }
+
+        if ('False' == 'True') {
+            rate = 1.3;
+        } else if ('False' == 'True') {
+            rate = 1.0;
+        }
+
+        if ('False' == 'True') {
+            rate = 1.5;
+        }
+        if (
+            'False' == 'True' && (
+                'False' == 'True' ||
+                'False' == 'True' ||
+                'False' == 'True'
+            )) {
+            rate = 1.5;
+        } else if ('False' == 'True' && (
+            'False' == 'True' ||
+            'False' == 'True'
+        )) {
+            rate = 1.2;
+        } else if ('False' == 'True') {
+            rate = 1.0;
+        } else if ('False' == 'True') {
+            rate = 1.0;
+        }
+
+        if ("False" == 'True') {
+            rate = 1.5;
+        }
+
+        if ('False' == 'True') {
+            rate = 1.5;
+        }
+
+        if ('False' == 'True') {
+            rate = 1.1;
+        }
+
+        if ('False' == 'True') {
+            rate = 1.5;
+        }
+        if ('False' == 'True') {
+            rate = 1.5;
+        }
+
+        if (playBackRate < rate) {
+            document.getElementById("video").querySelector("video").playbackRate += .1;
+            nowPlaybackRate = document.getElementById("video").querySelector("video").playbackRate;
+            //$('#speedTxt').text('배속 x ' + nowPlaybackRate.toFixed(1));
+        }
+
+        //alert(nowPlaybackRate);
+
+        // ########### 2017.05.22 노충환 : 아산커스텀 ###########
+        if ('45783' == '2584') {
+            onePlay_Check = 1;
+            fnAccQuizAdventage('44451499', 'HLSC60338', '0102', '1');
+        }
+
+
+    }
+
+    function fn_SpeedDown() {
+        playBackRate = (document.getElementById("video").querySelector("video").playbackRate);
+        playBackRate = playBackRate.toFixed(1);
+
+        var downRate = 0.8;
+        if ('False' == 'True') {
+            downRate = 1.3;
+        }
+
+        if ('False' == 'True') {
+            downRate = 1.1;
+        }
+
+
+        if (playBackRate > downRate) {
+            document.getElementById("video").querySelector("video").playbackRate -= .1;
+            nowPlaybackRate = document.getElementById("video").querySelector("video").playbackRate;
+            //$('#speedTxt').text('배속 x ' + nowPlaybackRate.toFixed(1));
+        }
+
+
+        //alert(nowPlaybackRate);
+
+        // ########### 2017.05.22 노충환 : 아산커스텀 ###########
+        if ('45783' == '2584') {
+            onePlay_Check = 1;
+            fnAccQuizAdventage('44451499', 'HLSC60338', '0102', '1');
+        }
+    }
+
+    function fn_RemoveSpeedButton() {
+        jwplayer().removeButton("spdDown");
+        jwplayer().removeButton("spdRate");
+        jwplayer().removeButton("spdUp");
+    }
+
+    function fn_AddSpeedButton() {
+
+
+        //[자체과정][만도] R&D Code of Conduct 이해 과정 5845 기수의 경우 배속 적용 제외 / 이재흠 / 2017.09.01
+        if ("HLSP60967" == "HLSP23969" && "2748" == "5845" && "2022" == "2017" && "45783" == "2586") {
+            return;
+        }
+
+        if ('False' == 'True') {
+            return;
+        }
+
+        // https://ihunet.atlassian.net/browse/BB-46068
+        var vSpeed_nm = "배속";
+        if ('HLSC60338' == "HLSC32510") {
+            vSpeed_nm = "speed";
+        }
+
+        //
+        //
+
+
+        jwplayer().addButton(
+            "https://img.hunet.co.kr/study/player/common/minus.png",
+            "재생속도감소",
+            function () {
+                playBackRate = (document.getElementById("video").querySelector("video").playbackRate);
+                playBackRate = playBackRate.toFixed(1);
+
+                fn_SpeedDown();
+
+                fn_RemoveSpeedButton();
+                fn_AddSpeedButton();
+
+
+            },
+            "spdDown"
+        );
+
+
+        var currentSpeed = document.getElementById("video").querySelector("video").playbackRate.toFixed(1);
+        var imgPath = "https://img.hunet.co.kr/study/player/common/" + currentSpeed + "rate.png";
+        jwplayer().addButton(imgPath
+            , vSpeed_nm
+            , function () {
+            }
+            , "spdRate");
+
+        //
+        //
+
+        jwplayer().addButton(
+            "https://img.hunet.co.kr/study/player/common/plus.png",
+            "재생속도증가",
+            function () {
+                playBackRate = (document.getElementById("video").querySelector("video").playbackRate);
+                playBackRate = playBackRate.toFixed(1);
+
+                fn_SpeedUp();
+
+                fn_RemoveSpeedButton();
+                fn_AddSpeedButton();
+            },
+            "spdUp"
+        );
+
+
+    }
+
+    // ########### 2017.05.22 노충환 : 아산커스텀 - 배속이나 진도바이동시 자동응시 처리 ###########
+    function fnAccQuizAdventage(take_course_seq, course_cd, chapter_no, frame_no) {
+        $.ajax({
+            type: "POST",
+            url: "/Study/Module/Page/AccidentQuiz_PC.aspx/SetAccidentQuizAdventage",
+            contentType: "application/json; charset=utf-8",
+            async: false,
+            data: '{"take_course_seq":' + Number(take_course_seq) + ',"course_cd":"' + course_cd + '","chapter_no":"' + chapter_no + '","frame_no":' + Number(frame_no) + '}',
+            dataType: "json",
+            success: function (data) {
+                var retVal = data.d;
+                if (retVal.result == "1") {
+                    //alert("ok");
+                }
+            },
+            error: function (e) {
+                //alert("code:" + request.status + "\n" + "message:" + request.responseText + "\n" + "error:" + error);
+                //alert("데이터 전송중 오류가 발생했습니다.");
+            }
+        });
+    }
+
+    // ########### 2017.05.22 노충환 : 아산커스텀 (모달팝업) ###########
+    function fnViewModal(url) {
+        $.get(url, function (data, status) {
+            if (status == "success") {
+                $("#divModalContents").html(data);
+            } else {
+                alert("페이지 로드중 오류가 발생했습니다");
+            }
+        });
+
+        $("#divModal").show();
+        return false;
+    }
+
+    //https://ihunet.atlassian.net/browse/BB-47649?filter=18490
+    function fn_ModalGo() {
+        var newwindow = window.open('https://platform.samsungcic.com/#/diag/SETUP201904161000454/1/EVALRTYP1/L1', '외부진단', 'width=915,height=670,scrollbars=yes');
+        newwindow.focus();
+    }
+
+    function fn_ModalGo53553() {
+        try {
+            if (parent.opener != undefined && parent.opener != null) {
+                document.domain = 'hunet.co.kr';
+                parent.opener.location = "https://smartlearning.hunet.co.kr/Poll/Index.aspx";
+                $('#moveBlockLayer53553').hide();
+            } else {
+                //alert('부모창 사라졌다!!!');
+                document.domain = "hunet.co.kr";
+                var openerName = "coursepop";
+
+                var url = "https://smartlearning.hunet.co.kr/Poll/Index.aspx";
+
+                var isChrome = false;
+                var _ua = navigator.userAgent;
+                var agt = _ua.toLowerCase();
+                if (agt.indexOf("chrome") != -1) {
+                    isChrome = true;
+                }
+                if (isChrome) {
+                    //window.top.window.close();
+                    coursepopObj = window.open(url, openerName, "width=950,height=700,scrollbars=yes,status=no,menubar=no,toolbar=no,location=no,resizable=no,left=100,top=100");
+                } else {
+                    try {
+                        if (top.opener.name) {
+                            openerName = top.opener.name;
+                        } else {
+                        }
+                    } catch (e) {
+                    }
+                    coursepopObj = window.open(url, openerName, "width=950,height=700,scrollbars=yes,status=no,menubar=no,toolbar=no,location=no,resizable=no,left=100,top=100");
+
+                    //top.window.close();//닫아버리자...
+                }
+            }
+        } catch (e) {
+
+        }
+    }
+</script>
+<script>
+    function IsCompletedOTStudy(chapterno, progressYN) {
+        var vurl = "/contents/common/main.asp?courseCd=HLSC60338&processCd=HLSP60967&studyProcessYear=2022";
+        vurl += "&studyProcessTerm=2748&companySeq=45783&userId=TMAP-T1100412&takeCourseSeq=44451499";
+        vurl += "&chapterNo=" + chapterno;
+        vurl += "&progressYN=" + progressYN;
+
+        parent.location.href = vurl;
+    }
+
+    function fnDown() {
+        window.open(GetPrefix() + 'down.zip');
+    }
+
+    //alert(chapterNo);
+    //-->
+    heartbeat = setInterval(fn_saveProgress, 1000); // 1000 = 1초
+</script>
+
+
+<div id="divModal" class="modal" style="display:none;">
+    <div id="divModalContents"></div>
+</div>
+<input type="hidden" id="hdfMaxPlayPosition"/>
+<input type="hidden" id="hdfLastPlayPosition"/>
+
+
+<div id="modalLastView" class="layer" style="display: none;">
+    <div class="layer-dialog2" style="width:250px;">
+        <div class="layer-content">
+            <div class="layer-body">
+                <p style="margin:16px 0px 16px 0px;  font-family:" 돋움"> 당신의 마음건강은 어떤가요?<br/>자가진단에 약10분이 소요됩니다.</p>
+                <div class="layer-btn">
+                    <button type="button" class="btn btn-primary2" onclick="fn_ModalGo();">진단 바로가기</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="moveBlockLayer53553" class="layer" style="display:none;">
+    <div class="layer-dialog">
+        <div class="layer-content">
+            <div class="layer-header">
+                <h3>알림</h3>
+            </div>
+            <div class="layer-body">
+                <p>학습이 모두 종료되었습니다. 설문에 <br>반드시 응시해 주셔야 수료 가능합니다. </p>
+                <div class="layer-btn">
+                    <a href="#" onclick="fn_ModalGo53553();">확인</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="overlay"></div>
+</div>
+
+</body>
+</html>
